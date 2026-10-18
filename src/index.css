@@ -1,0 +1,163 @@
+@import 'tailwindcss';
+@import '@fontsource/be-vietnam-pro/400.css';
+@import '@fontsource/be-vietnam-pro/500.css';
+@import '@fontsource/be-vietnam-pro/600.css';
+@import '@fontsource/be-vietnam-pro/700.css';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------------------
+   Design tokens. Components use role names (bg-surface, text-muted, …) so the
+   light and dark themes swap in one place.
+   --------------------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+  --background: #f6f7fb;
+  --surface: #ffffff;
+  --surface-2: #f1f3f8;
+  --surface-3: #e7eaf2;
+  --border: #e2e6ef;
+  --border-strong: #cbd2e0;
+  --fg: #111827;
+  --fg-2: #374151;
+  --muted: #6b7280;
+  --primary: #2f5fd0;
+  --primary-hover: #284fb0;
+  --primary-soft: #e8eefc;
+  --primary-fg: #ffffff;
+  --success: #12795a;
+  --success-soft: #e3f5ee;
+  --warning: #9a5b00;
+  --warning-soft: #fdf3dc;
+  --danger: #c22f3a;
+  --danger-soft: #fce8ea;
+  --ring: #2f5fd0;
+  --chart-1: #2a78d6;
+  --chart-grid: #e8ebf2;
+  --shadow: 0 1px 2px rgb(16 24 40 / 0.05), 0 1px 3px rgb(16 24 40 / 0.06);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #0d1220;
+  --surface: #151b2b;
+  --surface-2: #1b2234;
+  --surface-3: #242c41;
+  --border: #262f45;
+  --border-strong: #354059;
+  --fg: #eef1f7;
+  --fg-2: #cdd3df;
+  --muted: #9aa3b5;
+  --primary: #6f97f2;
+  --primary-hover: #86a8f5;
+  --primary-soft: #1d2a4b;
+  --primary-fg: #0d1220;
+  --success: #4cc89b;
+  --success-soft: #12302a;
+  --warning: #f0b450;
+  --warning-soft: #33280f;
+  --danger: #f2737c;
+  --danger-soft: #3a1a20;
+  --ring: #86a8f5;
+  --chart-1: #3987e5;
+  --chart-grid: #232b3f;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+}
+
+@theme inline {
+  --font-sans: 'Be Vietnam Pro', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --color-bg: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-fg: var(--fg);
+  --color-fg-2: var(--fg-2);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-fg: var(--primary-fg);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-grid: var(--chart-grid);
+  --shadow-card: var(--shadow);
+}
+
+@layer base {
+  html,
+  body {
+    background: var(--background);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    min-height: 100dvh;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--primary-soft);
+  }
+  [hidden] {
+    display: none !important;
+  }
+}
+
+@layer utilities {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-fade-in {
+  animation: fade-in 180ms ease-out both;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.45;
+  }
+  100% {
+    transform: scale(1.55);
+    opacity: 0;
+  }
+}
+.animate-pulse-ring {
+  animation: pulse-ring 1.6s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,16 @@
+# Server-side secrets for `wrangler pages dev` (local only). Copy to .dev.vars.
+# In production set these with `wrangler pages secret put <NAME> --project-name englishai`
+# or Cloudflare dashboard > Pages > englishai > Settings > Variables and Secrets (type: Secret).
+
+SUPABASE_URL=https://<project-ref>.supabase.co
+# Publishable key (or legacy anon key) — used to call Supabase as the signed-in user (RLS applies).
+SUPABASE_PUBLISHABLE_KEY=
+# Secret key (sb_secret_...) or legacy service_role key — bypasses RLS. Server only. Never commit.
+SUPABASE_SECRET_KEY=
+
+# Google AI Studio API key. Use a project WITHOUT billing to stay on the free tier.
+GEMINI_API_KEY=
+
+# Turn on cost-incurring features locally (defaults in wrangler.toml are "false").
+AI_TEXT_ENABLED=true
+AI_VOICE_ENABLED=true

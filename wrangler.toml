@@ -1,0 +1,30 @@
+# Cloudflare Pages project config (static site in ./dist + Pages Functions in ./functions).
+# Secrets (GEMINI_API_KEY, SUPABASE_SECRET_KEY) are NOT stored here — set them with
+#   npx wrangler pages secret put GEMINI_API_KEY --project-name englishai
+# or in the Cloudflare dashboard. For local dev, copy .dev.vars.example to .dev.vars.
+name = "englishai"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# Public, non-secret configuration. Override per environment in the dashboard if needed.
+# Comma-separated list of origins allowed to call /api (production + preview domains).
+ALLOWED_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8788"
+# Cost-incurring features are OFF until explicitly enabled.
+AI_TEXT_ENABLED = "false"
+AI_VOICE_ENABLED = "false"
+GEMINI_TEXT_MODEL = "gemini-3.5-flash-lite"
+GEMINI_LIVE_MODEL = "gemini-3.8-live"
+GEMINI_LIVE_API_VERSION = "v1beta"
+# Per-user limits
+LIMIT_CHAT_PER_DAY = "60"
+LIMIT_ASSIST_PER_DAY = "40"
+LIMIT_EVAL_PER_DAY = "15"
+LIMIT_AI_PER_MINUTE = "8"
+LIMIT_VOICE_SECONDS_PER_DAY = "900"
+LIMIT_VOICE_SESSION_SECONDS = "300"
+# Whole-app limits (protect the provider's free quota)
+LIMIT_GLOBAL_AI_PER_DAY = "900"
+LIMIT_GLOBAL_VOICE_SECONDS_PER_DAY = "7200"
+LIMIT_VOICE_CONCURRENT_GLOBAL = "3"
