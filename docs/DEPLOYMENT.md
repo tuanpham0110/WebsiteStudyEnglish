@@ -18,7 +18,7 @@ Thời gian: khoảng 30–45 phút cho lần đầu.
    - **Publishable key** (`sb_publishable_…`) → dùng ở frontend và server.
    - **Secret key** (`sb_secret_…`) → **chỉ** dùng ở server. Không dán vào frontend, không commit.
 3. **Chạy migrations** — chọn một cách:
-   - _SQL Editor_ (đơn giản nhất): mở SQL Editor → New query → dán toàn bộ `supabase/migrations/20261010000001_init_schema.sql` → Run. Sau đó làm tương tự với `20261010000002_seed_content.sql` (nội dung học; chạy lại nhiều lần vẫn an toàn).
+   - _SQL Editor_: với DB mới, chạy từng file `.sql` trong `supabase/migrations/` theo thứ tự tên (schema → seed → CMS/rate limit). Với DB đã có dữ liệu, chỉ chạy migration chưa áp dụng. Seed hiện tại chỉ thêm nội dung còn thiếu để giữ chỉnh sửa từ CMS.
    - _Supabase CLI_: `npx supabase@latest login`, `npx supabase@latest init` (nếu chưa có `supabase/config.toml`), `npx supabase@latest link --project-ref <ref>`, rồi `npx supabase@latest db push`.
 4. **Kiểm tra RLS**: Table Editor → mỗi bảng trong `public` phải hiện "RLS enabled".
 5. **Cấu hình Authentication**:
@@ -36,8 +36,8 @@ Thời gian: khoảng 30–45 phút cho lần đầu.
 
 ## 2. Gemini API key
 
-1. Vào [AI Studio → API keys](https://aistudio.google.com/app/apikey) → Create API key. **Chọn/tạo Google Cloud project không bật billing** để chỉ dùng gói miễn phí (hết hạn mức thì nhận lỗi 429, không bị tính tiền).
-2. Mở [AI Studio → Rate limits](https://aistudio.google.com/rate-limit), ghi lại hạn mức của `gemini-3.5-flash-lite` và `gemini-3.8-live`, rồi chỉnh trong `wrangler.toml` sao cho `LIMIT_GLOBAL_AI_PER_DAY` và `LIMIT_VOICE_CONCURRENT_GLOBAL` **thấp hơn** hạn mức thật.
+1. Vào [AI Studio → API keys](https://aistudio.google.com/app/apikey) → Create API key. Chọn project và chế độ billing sau khi xem điều khoản xử lý dữ liệu/đối tượng người dùng. Gói miễn phí có thể dùng nội dung để cải thiện sản phẩm; không tự động bật billing trong ứng dụng.
+2. Mở [AI Studio → Rate limits](https://aistudio.google.com/rate-limit), ghi lại hạn mức model rồi chỉnh `LIMIT_GLOBAL_AI_PER_MINUTE`, `LIMIT_GLOBAL_AI_PER_DAY`, `LIMIT_VOICE_CONCURRENT_GLOBAL` trong `wrangler.toml` thấp hơn hạn mức thật.
 3. Kiểm tra key hoạt động thật (dùng vài lượt quota):
    ```bash
    GEMINI_API_KEY=... npm run smoke:gemini

@@ -7,6 +7,10 @@ import { AuthProvider } from './providers/AuthProvider';
 import { ThemeProvider, useTheme } from './providers/ThemeProvider';
 import './index.css';
 
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+    void navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: { retry: 1, refetchOnWindowFocus: false },

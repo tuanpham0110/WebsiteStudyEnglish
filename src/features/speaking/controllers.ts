@@ -139,7 +139,7 @@ abstract class Store {
 export type RealtimeDeps = {
     api: SpeakingApi;
     startMic: typeof startMicCapture;
-    createPlayer: (sampleRate: number) => Pick<PcmPlayer, 'enqueue' | 'interrupt' | 'close' | 'resume' | 'playClip' | 'onDrained' | 'playing'>;
+    createPlayer: (sampleRate: number) => Pick<PcmPlayer, 'enqueue' | 'interrupt' | 'close' | 'resume' | 'setSampleRate' | 'playClip' | 'onDrained' | 'playing'>;
     createClient: (options: ConstructorParameters<typeof GeminiLiveClient>[0]) => Pick<
         GeminiLiveClient,
         'connect' | 'sendAudio' | 'sendAudioStreamEnd' | 'sendText' | 'close'
@@ -173,10 +173,11 @@ export class RealtimeSpeakingController extends Store {
     private userSpokeThisTurn = false;
     private modelAudioThisTurn = false;
     private outputRate = 24000;
+    private echoTailUntil = 0;
     private ending = false;
 
     constructor(
-        private readonly options: { level: Level; topic?: string; scenarioId?: string; voice: LiveVoice },
+        private readonly options: { level: Level; topic?: string; scenarioId?: string; voice: LiveVoice; speakerMode?: boolean },
         deps: Partial<RealtimeDeps> = {},
     ) {
         super('realtime');
@@ -191,7 +192,7 @@ export class RealtimeSpeakingController extends Store {
 
         // Created synchronously inside the click so the browser allows audio output.
         this.player = this.deps.createPlayer(this.outputRate);
-        void this.player.resume();
+        const outputReady = this.player.resume().then(() => true, () => false);
 
         try {
             this.mic = await this.deps.startMic({ onChunk: (chunk) => this.onMicChunk(chunk) });
@@ -202,6 +203,10 @@ export class RealtimeSpeakingController extends Store {
             return this.fail(micError.message, `mic_${micError.reason}`);
         }
         if (this.state.status !== 'requesting_mic') return void this.cleanup();
+        if (!(await outputReady)) {
+            await this.cleanup();
+            return this.fail('Không mở được âm thanh. Hãy chạm bắt đầu phiên để thử lại.', 'audio_blocked');
+        }
         this.set({ status: 'connecting', micLive: true });
 
         let grant: SpeakingStartResponse;
@@ -227,10 +232,7 @@ export class RealtimeSpeakingController extends Store {
             await this.reportEnd('failed', 'cancelled');
             return;
         }
-        if (grant.outputSampleRate !== 24000) {
-            void this.player.close();
-            this.player = this.deps.createPlayer(grant.outputSampleRate);
-        }
+        this.player.setSampleRate(grant.outputSampleRate);
 
         this.client = this.deps.createClient({
             wsUrl: grant.wsUrl,
@@ -342,8 +344,14 @@ export class RealtimeSpeakingController extends Store {
 
     private onMicChunk({ pcm, rms }: MicChunk) {
         if (!this.connected || this.state.muted) return;
-        this.client?.sendAudio(pcm);
         const now = this.deps.now();
+        // Optional half duplex for speakers. Acoustic echo cancellation alone
+        // is device-dependent; do not feed the model its own voice.
+        if (this.options.speakerMode) {
+            if (this.modelAudioThisTurn || this.player?.playing) { this.echoTailUntil = now + 350; return; }
+            if (now < this.echoTailUntil) return;
+        }
+        this.client?.sendAudio(pcm);
         if (rms > SPEECH_RMS) {
             this.userSpeechAt = now;
             this.userSpokeThisTurn = true;
@@ -465,6 +473,9 @@ export class FallbackSpeakingController extends Store {
     ) {
         super('fallback');
         this.deps = { api: httpSpeakingApi, now: () => Date.now(), ...deps };
+        // Server capture creates an AudioContext: each turn starts from a tap
+        // so iOS can unlock audio and the learner controls the recording cost.
+        this.autoListen = deps.stt?.name !== 'server';
     }
 
     get canListen() {
@@ -492,7 +503,10 @@ export class FallbackSpeakingController extends Store {
         } catch (error) {
             return this.fail(errorMessage(error), error instanceof ApiRequestError ? error.code : 'start_failed');
         }
-        if (this.ended) return;
+        if (this.ended) {
+            await this.deps.api.end(grant.sessionId, { status: 'failed', errorCode: 'cancelled' }).catch(() => {});
+            return;
+        }
         this.set({ sessionId: grant.sessionId, maxSeconds: grant.maxSeconds, startedAt: this.deps.now() });
         this.timer = setInterval(() => this.tick(), 500);
         this.addEntry('assistant', grant.opening, true);

@@ -14,6 +14,7 @@ ALLOWED_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:
 # Cost-incurring features are OFF until explicitly enabled.
 AI_TEXT_ENABLED = "false"
 AI_VOICE_ENABLED = "false"
+AZURE_PRONUNCIATION_ENABLED = "false"
 GEMINI_TEXT_MODEL = "gemini-3.5-flash-lite"
 GEMINI_LIVE_MODEL = "gemini-3.8-live"
 GEMINI_LIVE_API_VERSION = "v1beta"
@@ -26,5 +27,7 @@ LIMIT_VOICE_SECONDS_PER_DAY = "900"
 LIMIT_VOICE_SESSION_SECONDS = "300"
 # Whole-app limits (protect the provider's free quota)
 LIMIT_GLOBAL_AI_PER_DAY = "900"
+# Configure from the active model/project limits in AI Studio, with headroom.
+LIMIT_GLOBAL_AI_PER_MINUTE = "10"
 LIMIT_GLOBAL_VOICE_SECONDS_PER_DAY = "7200"
 LIMIT_VOICE_CONCURRENT_GLOBAL = "3"

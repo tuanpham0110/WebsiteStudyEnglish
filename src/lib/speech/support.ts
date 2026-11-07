@@ -57,6 +57,6 @@ export type SpeakingTier = 'realtime' | 'fallback' | 'text';
 export function chooseTier(support: SpeechSupport, server: { aiVoice: boolean; aiText: boolean }): SpeakingTier {
     const canCapture = support.secureContext && support.microphone;
     if (server.aiVoice && canCapture && support.realtimeAudio && support.webSocket) return 'realtime';
-    if (server.aiText && canCapture && support.speechRecognition && support.speechSynthesis) return 'fallback';
+    if (server.aiText && canCapture && (support.speechRecognition || support.realtimeAudio)) return 'fallback';
     return 'text';
 }

@@ -50,9 +50,10 @@ export class EnglishEvaluationService {
             correctionSchema,
             700,
         );
-        // Treat "corrections" identical to the original as no error.
-        if (result.hasErrors && normalize(result.corrected) === normalize(message)) {
-            return { ...result, hasErrors: false };
+        if (result.hasErrors && !result.corrected.trim()) throw new ProviderError('invalid_output','empty correction');
+        // Never show a stylistic rewrite or invented source as a correction.
+        if (!result.hasErrors || normalize(result.corrected) === normalize(message)) {
+            return { hasErrors: false, original: message, corrected: message, explanation: '', example: '' };
         }
         return { ...result, original: message };
     }
@@ -80,13 +81,19 @@ export class EnglishEvaluationService {
         language: ExplanationLanguage;
     }): Promise<WritingFeedback> {
         const task = input.prompt ? `Writing task given to the learner: ${input.prompt}\n\n` : '';
-        return this.json(
+        const feedback = await this.json(
             writingPrompt(input.level, input.type, input.language),
             `${task}Learner's ${input.type}:\n"""${input.text}"""`,
             writingOutput,
             writingFeedbackSchema,
             4096,
         );
+        if (feedback.changes.some((edit) => !edit.original.trim() || !input.text.includes(edit.original) ||
+            !edit.revised.trim() || !feedback.correctedText.includes(edit.revised)) ||
+            feedback.vocabularySuggestions.some((item) => !item.original.trim() || !input.text.includes(item.original))) {
+            throw new ProviderError('invalid_output', 'writing feedback contains unsupported quotations');
+        }
+        return feedback;
     }
 
     async sessionReport(input: {
@@ -108,6 +115,8 @@ export class EnglishEvaluationService {
         );
         return {
             ...report,
+            goodSentences: report.goodSentences.filter((s) => s.trim() && input.lines.some((l) => l.role === 'user' && l.text.includes(s))),
+            grammarIssues: report.grammarIssues.filter((s) => s.original.trim() && input.lines.some((l) => l.role === 'user' && l.text.includes(s.original))),
             pronunciationNote: PRONUNCIATION_NOTE_VI,
             generatedAt: new Date().toISOString(),
             basedOnTurns: input.lines.filter((l) => l.role === 'user').length,

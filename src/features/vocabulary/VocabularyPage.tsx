@@ -10,10 +10,12 @@ import { Input, Select } from '@/components/ui/form';
 import { Badge, EmptyState, ErrorState, Skeleton } from '@/components/ui/feedback';
 import { Tabs } from '@/components/ui/tabs';
 import { SpeakButton } from '@/components/common/SpeakButton';
+import { SaveOfflineButton } from '@/components/common/SaveOfflineButton';
 import { useStudyTimer } from '@/hooks/useStudyTimer';
 import { useLearnerContext } from '@/hooks/useUserData';
 import { errorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
+import { isDue } from '@/lib/srs';
 import { TOPIC_LABEL, useCatalog, useTrackedWords, useVocabMutations, type TrackedWord, type VocabWord } from './api';
 import { ReviewDeck } from './ReviewDeck';
 import { VocabQuiz } from './VocabQuiz';
@@ -66,7 +68,7 @@ export default function VocabularyPage() {
     const tracked = useTrackedWords();
     const m = useVocabMutations();
     const trackedMap = useMemo(() => new Map((tracked.data ?? []).map((t) => [t.vocabulary_id, t])), [tracked.data]);
-    const dueCount = (tracked.data ?? []).filter((t) => Date.parse(t.due_at) <= Date.now() && t.status !== 'mastered').length;
+    const dueCount = (tracked.data ?? []).filter((t) => isDue(t)).length;
 
     const setTab = (t: Tab) => setParams(t === 'browse' ? {} : { tab: t }, { replace: true });
     const notify = (p: Promise<unknown>, ok: string) => p.then(() => toast.success(ok)).catch((e) => toast.error(errorMessage(e)));
@@ -94,6 +96,7 @@ export default function VocabularyPage() {
                     </Button>
                 }
             />
+            {tab === 'browse' && Boolean(catalog.data?.length) && <SaveOfflineButton item={{ id: `catalog-${level || 'all'}-${topic || 'all'}-${search.trim().slice(0,80)}`, kind: 'vocabulary', title: `Từ vựng ${level || 'mọi trình độ'} · ${TOPIC_LABEL[topic] || 'mọi chủ đề'}${search ? ` · ${search}` : ''}`, words: catalog.data!.map((w) => ({ word: w.word, meaning: w.meaning_vi, example: w.example_en ?? '' })) }} />}
             <Tabs
                 label="Chức năng từ vựng"
                 value={tab}

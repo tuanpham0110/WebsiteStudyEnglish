@@ -60,6 +60,11 @@ export interface SpeechToTextProvider {
 }
 
 export type Providers = {
+    pronunciation?: {
+        readonly name: string;
+        readonly model: string;
+        assess(audio: Uint8Array, referenceText: string): Promise<import('../../shared/schemas').PronunciationResult>;
+    } | null;
     text: TextChatProvider | null;
     live: RealtimeVoiceProvider | null;
     stt: SpeechToTextProvider | null;

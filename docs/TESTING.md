@@ -61,7 +61,7 @@ Sau khi deploy (đánh dấu khi đã làm):
 
 **Dự phòng**
 - [ ] Đặt `AI_VOICE_ENABLED = "false"` → trang Luyện nói chỉ cho chọn dự phòng/văn bản và ghi rõ "không phải realtime".
-- [ ] Firefox: chế độ dự phòng bị vô hiệu với lý do; chế độ văn bản hoạt động; Phát âm dùng nhận dạng phía server.
+- [ ] Firefox: dự phòng dùng STT server theo từng lượt bằng nút Nói; chế độ văn bản vẫn hoạt động; phát âm dùng Azure nếu được cấu hình hoặc STT server.
 
 **Học tập & giao diện**
 - [ ] Từ vựng: thêm/sửa/xóa từ của tôi, yêu thích, ôn flashcard (lịch ôn thay đổi), quiz.
@@ -72,3 +72,13 @@ Sau khi deploy (đánh dấu khi đã làm):
 - [ ] Dashboard: chuỗi ngày, phút hôm nay, biểu đồ 14 ngày khớp hoạt động thật.
 - [ ] Quản trị (tài khoản admin): số liệu tổng hợp; tài khoản thường mở `/app/admin` bị chuyển về Dashboard.
 - [ ] Bàn phím: Tab qua menu, Enter/Space, phím mũi tên trong tab; chế độ tối dễ đọc.
+
+**Bổ sung 08/11/2026**
+- [ ] Quản trị: tạo nháp, sửa nội dung/câu hỏi/từ catalog, xuất bản/ẩn bài; tài khoản thường không đọc được nháp và không ghi nội dung dùng chung.
+- [ ] Thêm URL audio hợp lệ trong CMS; nghe file, tốc độ, chuyển câu; URL lỗi báo lỗi và chỉ đổi sang TTS khi người học chọn.
+- [ ] Nhật ký giọng nói: ghi chủ động, nghe, tải WAV, reload, xóa; không xuất hiện request upload. Rời trang/từ chối micro không giữ thiết bị ghi âm.
+- [ ] Azure: cấu hình resource thật, chấm cùng câu đọc đúng/sai âm vị, phân biệt điểm acoustic với độ khớp transcript. Thiếu cấu hình không hiện điểm acoustic.
+- [ ] Tải bài đọc/thẻ catalog → ngắt mạng → mở `/offline.html`, đọc/lật thẻ; không có API/JWT/chat trong cache. Ôn offline không làm thay đổi SRS tài khoản.
+- [ ] Từ `mastered` đến hạn vẫn hiện trong hàng đợi và thống kê Dashboard.
+- [ ] Với loa ngoài, bật tùy chọn tương ứng; chờ AI nói xong rồi trả lời. Với tai nghe, tắt tùy chọn để ngắt lời AI.
+- [ ] Health check khi DB không truy cập được trả 503; tự khôi phục project trên dashboard nếu Supabase đã pause.

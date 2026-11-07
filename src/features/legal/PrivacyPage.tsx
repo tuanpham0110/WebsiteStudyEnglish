@@ -2,7 +2,7 @@ import { LegalLayout } from './LegalLayout';
 
 export default function PrivacyPage() {
     return (
-        <LegalLayout title="Chính sách quyền riêng tư" updated="10/10/2026">
+        <LegalLayout title="Chính sách quyền riêng tư" updated="08/11/2026">
             <p>
                 Trang này giải thích EnglishAI thu thập dữ liệu gì, dùng vào việc gì và bạn kiểm soát dữ liệu của mình như thế nào. Người vận hành
                 trang cần bổ sung thông tin liên hệ chính thức trước khi mở cho công chúng.
@@ -18,9 +18,14 @@ export default function PrivacyPage() {
 
             <h2>2. Âm thanh</h2>
             <p>
-                EnglishAI <strong>không lưu file âm thanh</strong>. Trong chế độ luyện nói realtime, âm thanh được truyền trực tiếp từ trình duyệt tới
+                EnglishAI <strong>không lưu file âm thanh trên máy chủ</strong>. Trong chế độ luyện nói realtime, âm thanh được truyền trực tiếp từ trình duyệt tới
                 nhà cung cấp AI để xử lý và không đi qua máy chủ của chúng tôi. Âm thanh trả lời của AI chỉ được giữ tạm trong bộ nhớ trình duyệt để
                 bạn nghe lại, và mất khi đóng trang. Micro chỉ bật khi bạn bắt đầu phiên và được tắt ngay khi kết thúc.
+            </p>
+            <p>
+                Khi dùng nhận dạng phía máy chủ hoặc chấm âm học Azure, bản thu đi qua API của EnglishAI tới dịch vụ xử lý và không được lưu thành file trên máy chủ.
+                Nhật ký giọng nói là tính năng riêng: chỉ khi bạn nhấn “Ghi và lưu trên thiết bị”, bản thu mới được lưu trong trình duyệt, theo tài khoản đang đăng nhập.
+                Bản thu nhật ký không được tải lên; bạn có thể nghe, tải WAV hoặc xóa. Giới hạn là 100 bản hoặc 32 MB mỗi tài khoản trên thiết bị. Xóa dữ liệu trình duyệt có thể làm mất bản thu.
             </p>
 
             <h2>3. Bên thứ ba xử lý dữ liệu</h2>
@@ -33,9 +38,12 @@ export default function PrivacyPage() {
                 </li>
                 <li>
                     <strong>Google (Gemini API)</strong> — xử lý tin nhắn, âm thanh luyện nói, bài viết để tạo câu trả lời và nhận xét. Khi dịch vụ
-                    chạy trên gói miễn phí của Gemini API, Google cho biết nội dung có thể được dùng để cải thiện sản phẩm của họ. Vì vậy,{' '}
+                    chạy trên dịch vụ miễn phí của Gemini API, Google cho biết nội dung có thể được dùng để cải thiện sản phẩm, tùy tài khoản billing và khu vực áp dụng.
+                    Xem <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noreferrer">điều khoản xử lý dữ liệu của Google</a>. Vì vậy,{' '}
                     <strong>đừng nhập thông tin nhạy cảm</strong> (số giấy tờ, mật khẩu, dữ liệu sức khỏe…) vào các tính năng AI.
                 </li>
+                <li><strong>Microsoft Azure Speech</strong> — xử lý bản thu để chấm độ chính xác, độ trôi chảy và âm vị, chỉ khi quản trị viên bật dịch vụ chấm âm học.</li>
+                <li><strong>Nguồn audio bài học</strong> — trình duyệt tải bản thu từ địa chỉ do quản trị viên cung cấp; máy chủ cung cấp audio có thể nhận thông tin kết nối như địa chỉ IP.</li>
                 <li>
                     <strong>Trình duyệt của bạn</strong> — ở chế độ dự phòng và luyện phát âm, tính năng nhận dạng giọng nói của trình duyệt có thể gửi
                     âm thanh tới dịch vụ của nhà phát triển trình duyệt (ví dụ Google với Chrome) theo chính sách riêng của họ.
@@ -65,6 +73,7 @@ export default function PrivacyPage() {
                 Trình duyệt lưu phiên đăng nhập và lựa chọn giao diện (sáng/tối) trong bộ nhớ cục bộ. Chúng tôi không dùng cookie quảng cáo hay công
                 cụ theo dõi bên thứ ba.
             </p>
+            <p>Bản nháp bài viết, bản ghi nhật ký và bài đọc/thẻ từ bạn chủ động tải offline cũng nằm trên thiết bị. Thư viện offline chỉ chứa nội dung dùng chung và mở được không cần đăng nhập; không chứa tin nhắn, token hay kết quả học tập riêng. Kết quả ôn thẻ offline không đồng bộ lên tài khoản.</p>
 
             <h2>7. Bảo mật</h2>
             <p>

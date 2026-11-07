@@ -217,6 +217,7 @@ export function makeTestApp(options: { env?: Env; providers?: Partial<Providers>
     const config = loadConfig(env);
     const deps: AppDeps = {
         config,
+        checkDatabase: async () => !options.noDb,
         verifyToken: options.noDb ? null : async (token) => USERS[token] ?? null,
         repoFor: options.noDb ? null : (token) => db.repoFor(token),
         providers: { text: config.aiTextEnabled ? text : null, live: config.aiVoiceEnabled ? live : null, stt: null, ...options.providers },

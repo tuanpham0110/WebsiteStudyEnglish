@@ -6,6 +6,11 @@ import { makeTestApp, readSse, USERS } from './fakes';
 const A = USERS['token-a'].id;
 
 describe('auth & configuration', () => {
+    it('reports unavailable database readiness with HTTP 503', async () => {
+        const response = await makeTestApp({ noDb: true }).request('/api/health');
+        expect(response.status).toBe(503);
+        expect(await response.json()).toMatchObject({ ok: false, database: false });
+    });
     it('health is public and reports feature flags', async () => {
         const { request } = makeTestApp();
         const res = await request('/api/health');
@@ -163,7 +168,7 @@ describe('AI chat', () => {
         );
         const error = events.find((e) => e.event === 'error');
         expect(error?.data).toMatchObject({ code: 'PROVIDER_QUOTA' });
-        expect(String(error?.data.message)).toContain('không tự chuyển sang gói trả phí');
+        expect(String(error?.data.message)).toContain('giới hạn số yêu cầu');
         expect(db.usage[0]).toMatchObject({ status: 'error', code: 'quota' });
     });
 

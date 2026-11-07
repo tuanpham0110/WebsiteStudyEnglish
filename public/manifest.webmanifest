@@ -1,0 +1,11 @@
+{
+  "name": "EnglishAI — Thư viện offline",
+  "short_name": "EnglishAI",
+  "lang": "vi",
+  "start_url": "/offline.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6f7fb",
+  "theme_color": "#3454d1",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

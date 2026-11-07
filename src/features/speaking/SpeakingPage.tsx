@@ -8,14 +8,14 @@ import { getScenario } from '@shared/roleplay';
 import type { SessionReport } from '@shared/schemas';
 import { Button, ButtonLink } from '@/components/ui/button';
 import { Card, CardBody, CardHeader, PageHeader } from '@/components/ui/card';
-import { Select } from '@/components/ui/form';
+import { Select, Switch } from '@/components/ui/form';
 import { Alert, Badge, ErrorState, Skeleton } from '@/components/ui/feedback';
 import { SessionReportView } from '@/components/common/SessionReportView';
 import { useAppConfig, useLearnerContext } from '@/hooks/useUserData';
 import { api, errorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { formatDuration } from '@/lib/format';
-import { browserSTT } from '@/lib/speech/stt';
+import { browserSTT, serverSTT } from '@/lib/speech/stt';
 import { browserTTS } from '@/lib/speech/tts';
 import { chooseTier, detectSpeechSupport, type SpeakingTier } from '@/lib/speech/support';
 import { useVocabMutations } from '@/features/vocabulary/api';
@@ -31,7 +31,7 @@ const TIER_INFO: Record<SpeakingTier, { title: string; description: string; icon
     },
     fallback: {
         title: 'Chế độ dự phòng',
-        description: 'Trình duyệt nhận dạng giọng nói → AI trả lời bằng văn bản → trình duyệt đọc to. Không phải voice-to-voice realtime.',
+        description: 'Nhận dạng từng lượt nói → AI trả lời bằng văn bản → đọc to nếu thiết bị hỗ trợ. Không phải hội thoại realtime.',
         icon: <Mic className="h-5 w-5" />,
     },
     text: {
@@ -57,13 +57,15 @@ export default function SpeakingPage() {
     const [tierChoice, setTierChoice] = useState<SpeakingTier | null>(null);
     const [report, setReport] = useState<SessionReport | null>(null);
     const [reportLoading, setReportLoading] = useState(false);
+    const [speakerMode, setSpeakerMode] = useState(false);
+    const serverRecognition = useMemo(() => serverSTT(15), []);
 
     const features = config.data?.features;
     const bestTier = features ? chooseTier(support, features) : null;
     const available: SpeakingTier[] = features
         ? ([
                 features.aiVoice && support.secureContext && support.microphone && support.realtimeAudio && support.webSocket ? 'realtime' : null,
-                features.aiText && support.secureContext && support.microphone && support.speechRecognition && support.speechSynthesis ? 'fallback' : null,
+                features.aiText && support.secureContext && support.microphone && (support.speechRecognition || support.realtimeAudio) ? 'fallback' : null,
                 features.aiText ? 'text' : null,
             ].filter(Boolean) as SpeakingTier[])
         : [];
@@ -77,12 +79,12 @@ export default function SpeakingPage() {
         setReport(null);
         const common = { level: effectiveLevel, topic: scenario ? undefined : topic, scenarioId: scenario?.id };
         if (tier === 'realtime') {
-            begin(new RealtimeSpeakingController({ ...common, voice: effectiveVoice }));
+            begin(new RealtimeSpeakingController({ ...common, voice: effectiveVoice, speakerMode }));
         } else {
             begin(
                 new FallbackSpeakingController(
                     { ...common, ttsRate: learner.ttsRate, ttsVoice: learner.ttsVoice },
-                    { stt: tier === 'fallback' ? browserSTT : null, tts: browserTTS.isSupported() ? browserTTS : null },
+                    { stt: tier === 'fallback' ? support.speechRecognition ? browserSTT : serverRecognition : null, tts: browserTTS.isSupported() ? browserTTS : null },
                 ),
             );
         }
@@ -130,6 +132,8 @@ export default function SpeakingPage() {
                     <Card>
                         <CardHeader title="Thiết lập phiên luyện nói" />
                         <CardBody className="space-y-5">
+                            {tier === 'realtime' && <Switch label="Tôi dùng loa ngoài" checked={speakerMode} onChange={setSpeakerMode} description="Đợi AI nói xong rồi trả lời để tránh micro thu lại tiếng loa. Dùng tai nghe để có thể ngắt lời AI." />}
+                            {tier === 'fallback' && !support.speechRecognition && <Alert tone="neutral">Thiết bị dùng nhận dạng phía máy chủ: mỗi lượt ghi tối đa 15 giây, nhấn “Nói xong” để gửi sớm. Nhận dạng và câu trả lời AI dùng hạn mức riêng.</Alert>}
                             {available.length === 0 ? (
                                 <Alert tone="warning" title="Chưa thể luyện nói">
                                     Máy chủ chưa bật tính năng AI (integration pending), nên không có phiên nói nào được tạo. Không có âm thanh giả lập.

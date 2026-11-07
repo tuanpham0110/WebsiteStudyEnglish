@@ -8,6 +8,7 @@ import { useAppConfig } from '@/hooks/useUserData';
 import { errorMessage } from '@/lib/api';
 import { formatDay, formatNumber } from '@/lib/format';
 import { db, unwrap } from '@/lib/supabase';
+import { ContentManager } from './ContentManager';
 
 type Overview = {
     users_total: number;
@@ -38,6 +39,7 @@ export default function AdminPage() {
     return (
         <div className="space-y-6">
             <PageHeader title="Quản trị" description="Số liệu tổng hợp (không chứa nội dung tin nhắn hay email). Ngày tính theo UTC." />
+            <ContentManager />
             {overview.isError ? (
                 <ErrorState message={errorMessage(overview.error)} onRetry={() => void overview.refetch()} />
             ) : (

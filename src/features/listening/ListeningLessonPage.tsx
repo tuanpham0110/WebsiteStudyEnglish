@@ -107,7 +107,7 @@ export default function ListeningLessonPage() {
             <Card>
                 <CardHeader
                     title="Bài nghe"
-                    description="Giọng đọc tổng hợp của trình duyệt (chất lượng phụ thuộc thiết bị)."
+                    description={player.recordedCount === lines.length && lines.length > 0 ? 'Phát bản thu âm của bài học.' : player.recordedCount > 0 ? 'Ưu tiên bản thu âm; các câu chưa có audio dùng giọng máy.' : 'Bài này dùng giọng máy của thiết bị. Chưa có bản thu âm tự nhiên.'}
                     action={
                         <Button variant="ghost" size="sm" onClick={() => setShowTranscript((s) => !s)} aria-pressed={showTranscript}>
                             {showTranscript ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
@@ -116,6 +116,7 @@ export default function ListeningLessonPage() {
                     }
                 />
                 <CardBody className="space-y-4">
+                    {player.error && <Alert tone="warning">{player.error} {player.ttsSupported && <Button size="sm" variant="outline" onClick={player.retryWithTts}>Nghe câu bằng giọng máy</Button>}</Alert>}
                     {!player.supported ? (
                         <Alert tone="warning">Trình duyệt này không hỗ trợ đọc văn bản (speech synthesis). Bạn vẫn có thể đọc transcript và làm bài tập.</Alert>
                     ) : (

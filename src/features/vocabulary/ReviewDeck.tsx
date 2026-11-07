@@ -8,7 +8,7 @@ import { EmptyState, Progress } from '@/components/ui/feedback';
 import { SpeakButton } from '@/components/common/SpeakButton';
 import { errorMessage } from '@/lib/api';
 import { logProgress } from '@/lib/progress';
-import { previewIntervals, type SrsRating } from '@/lib/srs';
+import { isDue, previewIntervals, type SrsRating } from '@/lib/srs';
 import { useAuth } from '@/providers/AuthProvider';
 import { useVocabMutations, type TrackedWord } from './api';
 
@@ -23,7 +23,7 @@ export function ReviewDeck({ words }: { words: TrackedWord[] }) {
     const { user } = useAuth();
     const qc = useQueryClient();
     const { review } = useVocabMutations();
-    const due = useMemo(() => words.filter((w) => Date.parse(w.due_at) <= Date.now() && w.status !== 'mastered').slice(0, 30), [words]);
+    const due = useMemo(() => words.filter((w) => isDue(w)).sort((a,b) => Date.parse(a.due_at)-Date.parse(b.due_at)).slice(0,30), [words]);
     const [queue] = useState(due);
     const [index, setIndex] = useState(0);
     const [flipped, setFlipped] = useState(false);

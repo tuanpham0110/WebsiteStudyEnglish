@@ -5,7 +5,7 @@ export type QuotaKind = 'chat' | 'assist' | 'evaluation' | 'stt';
 
 export type QuotaResult = {
     allowed: boolean;
-    reason?: 'user_daily' | 'rate_limited' | 'global_daily';
+    reason?: 'user_daily' | 'rate_limited' | 'global_daily' | 'global_rate_limited';
     log_id?: number;
     used?: number;
     limit?: number;
@@ -72,6 +72,7 @@ export interface Repo {
         dailyLimit: number;
         minuteLimit: number;
         globalLimit: number;
+        globalMinuteLimit: number;
         provider: string;
         model: string;
     }): Promise<QuotaResult>;

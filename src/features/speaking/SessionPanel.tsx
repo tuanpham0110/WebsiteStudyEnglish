@@ -120,7 +120,7 @@ export function SessionPanel({
                 <div className="border-b border-border px-4 py-3">
                     <h2 className="text-sm font-semibold">Bản ghi hội thoại</h2>
                     <p className="text-xs text-muted">
-                        {isFallback ? 'Nhận dạng bởi trình duyệt; có thể có sai sót.' : 'Do nhà cung cấp giọng nói tạo tự động; có thể có sai sót.'}
+                        {isFallback ? 'Bản nhận dạng tự động hoặc câu trả lời bạn gõ; có thể có sai sót.' : 'Do nhà cung cấp giọng nói tạo tự động; có thể có sai sót.'}
                     </p>
                 </div>
                 <div ref={listRef} className="scrollbar-thin max-h-[28rem] min-h-0 flex-1 space-y-3 overflow-y-auto p-4" aria-live="polite">

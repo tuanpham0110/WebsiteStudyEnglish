@@ -13,6 +13,7 @@ import { ChoiceChip, Field, Input, Select } from '@/components/ui/form';
 import { Alert, Skeleton } from '@/components/ui/feedback';
 import { usePreferences, useProfile, useUpdatePreferences, useUpdateProfile } from '@/hooks/useUserData';
 import { api, errorMessage } from '@/lib/api';
+import { clearRecordings } from '@/lib/audio/recordings';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { authErrorMessage } from '@/features/auth/AuthShell';
@@ -71,6 +72,9 @@ export default function ProfilePage() {
         setDeleting(true);
         try {
             await api('/api/account', { method: 'DELETE', body: { confirm: 'DELETE' } });
+            if (user && typeof indexedDB !== 'undefined') {
+                await clearRecordings(user.id).catch(() => toast.error('Tài khoản đã xóa. Hãy xóa dữ liệu trang trong trình duyệt để dọn bản ghi âm cục bộ.'));
+            }
             await signOut();
             toast.success('Tài khoản và dữ liệu của bạn đã được xóa.');
             navigate('/', { replace: true });

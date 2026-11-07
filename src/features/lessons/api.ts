@@ -26,7 +26,7 @@ export type GrammarContent = {
     tips: string[];
 };
 export type ReadingContent = { passage: string; summaryVi: string; wordCount: number };
-export type ListeningContent = { script: { speaker: string; text: string }[]; summaryVi: string; dictation: string[] };
+export type ListeningContent = { script: { speaker: string; text: string; audioUrl?: string }[]; summaryVi: string; dictation: string[] };
 export type PronunciationContent = { tipsVi: string; sentences: { text: string }[] };
 
 const LESSON_COLUMNS = 'id, kind, level, topic, title, title_vi, summary, content, sort_order';
@@ -36,7 +36,7 @@ export function useLessons<C>(kind: LessonKind) {
         queryKey: ['lessons', kind],
         staleTime: 10 * 60_000,
         queryFn: async () =>
-            unwrap(await db().from('lessons').select(LESSON_COLUMNS).eq('kind', kind).order('level').order('sort_order')) as LessonRow<C>[],
+            unwrap(await db().from('lessons').select(LESSON_COLUMNS).eq('is_published',true).eq('kind', kind).order('level').order('sort_order')) as LessonRow<C>[],
     });
 }
 
@@ -46,7 +46,7 @@ export function useLesson<C>(id: string | undefined) {
         enabled: Boolean(id),
         staleTime: 10 * 60_000,
         queryFn: async () => {
-            const lesson = unwrap(await db().from('lessons').select(LESSON_COLUMNS).eq('id', id!).maybeSingle()) as LessonRow<C> | null;
+            const lesson = unwrap(await db().from('lessons').select(LESSON_COLUMNS).eq('is_published',true).eq('id', id!).maybeSingle()) as LessonRow<C> | null;
             const exercises = unwrap(
                 await db()
                     .from('exercises')

@@ -22,6 +22,11 @@ const DAY = 86_400_000;
 
 const clampEase = (e: number) => Math.round(Math.min(MAX_EASE, Math.max(MIN_EASE, e)) * 100) / 100;
 
+// "Mastered" is a progress label; those words still return when due.
+export function isDue(state: { due_at: string }, now = Date.now()): boolean {
+    return Date.parse(state.due_at) <= now;
+}
+
 export function schedule(state: SrsState, rating: SrsRating, now = new Date()): SrsResult {
     let { ease_factor: ease, interval_days: interval, repetitions, lapses } = state;
     let dueMs: number;

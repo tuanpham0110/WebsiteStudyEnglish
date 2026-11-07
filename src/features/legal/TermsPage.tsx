@@ -2,7 +2,7 @@ import { LegalLayout } from './LegalLayout';
 
 export default function TermsPage() {
     return (
-        <LegalLayout title="Điều khoản sử dụng" updated="10/10/2026">
+        <LegalLayout title="Điều khoản sử dụng" updated="08/11/2026">
             <p>Khi sử dụng EnglishAI, bạn đồng ý với các điều khoản dưới đây.</p>
 
             <h2>1. Mục đích</h2>
@@ -11,7 +11,8 @@ export default function TermsPage() {
             <h2>2. Kết quả đánh giá</h2>
             <p>
                 Bài kiểm tra đầu vào, nhận xét bài viết và báo cáo luyện nói chỉ mang tính tham khảo và ước lượng. Chúng không phải chứng chỉ CEFR
-                hay kết quả kỳ thi chính thức. Luyện phát âm so sánh bản ghi nhận dạng giọng nói, không phải chấm điểm phát âm chuyên sâu.
+                hay kết quả kỳ thi chính thức. Độ khớp bản ghi chỉ so sánh văn bản nhận dạng. Khi được bật, Azure Speech cung cấp điểm âm học và âm vị;
+                các điểm này cũng có thể sai và phiên bản hiện tại không đánh giá trọng âm hay ngữ điệu.
             </p>
 
             <h2>3. Giới hạn sử dụng</h2>

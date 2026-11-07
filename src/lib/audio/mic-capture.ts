@@ -45,67 +45,69 @@ export async function startMicCapture(options: {
         throw new MicError('unsupported', 'Trình duyệt này không hỗ trợ thu âm thời gian thực.');
     }
     const targetSampleRate = options.targetSampleRate ?? 16000;
+    // Unlock inside the original tap, before permission dialogs/network awaits.
+    const context = new AudioContext();
+    const unlocked = context.resume().catch(() => {});
     let stream: MediaStream;
     try {
         stream = await navigator.mediaDevices.getUserMedia({
             audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
         });
     } catch (error) {
+        await context.close();
         throw micErrorFrom(error);
     }
 
-    const context = new AudioContext();
     try {
+        await unlocked;
         await context.audioWorklet.addModule('/worklets/pcm-recorder.js');
     } catch {
         stream.getTracks().forEach((t) => t.stop());
         await context.close();
         throw new MicError('unsupported', 'Không tải được bộ xử lý âm thanh.');
     }
-    if (context.state === 'suspended') await context.resume();
-
-    const source = context.createMediaStreamSource(stream);
-    const node = new AudioWorkletNode(context, 'pcm-recorder', {
-        numberOfInputs: 1,
-        numberOfOutputs: 1,
-        processorOptions: { targetSampleRate, chunkSize: Math.round((targetSampleRate * (options.chunkMs ?? 100)) / 1000) },
-    });
-    // Keep the graph pulled without playing the mic back to the speakers.
-    const silent = context.createGain();
-    silent.gain.value = 0;
-    source.connect(node);
-    node.connect(silent);
-    silent.connect(context.destination);
-
-    let muted = false;
-    let stopped = false;
-    node.port.onmessage = (event: MessageEvent<{ pcm: ArrayBuffer; rms: number }>) => {
-        if (muted || stopped) return;
-        options.onChunk({ pcm: new Int16Array(event.data.pcm), rms: event.data.rms });
-    };
-
-    return {
-        stream,
-        sampleRate: targetSampleRate,
-        setMuted(value) {
-            muted = value;
-            stream.getAudioTracks().forEach((t) => (t.enabled = !value));
-        },
-        isLive() {
-            return !stopped && stream.getAudioTracks().some((t) => t.readyState === 'live');
-        },
-        async stop() {
-            if (stopped) return;
-            stopped = true;
-            node.port.onmessage = null;
-            try {
-                source.disconnect();
-                node.disconnect();
-            } catch {
-                /* already disconnected */
-            }
-            stream.getTracks().forEach((t) => t.stop());
-            if (context.state !== 'closed') await context.close();
-        },
-    };
+    try {
+        if (context.state === 'suspended') await context.resume();
+        const source = context.createMediaStreamSource(stream);
+        const node = new AudioWorkletNode(context, 'pcm-recorder', {
+            numberOfInputs: 1,
+            numberOfOutputs: 1,
+            processorOptions: { targetSampleRate, chunkSize: Math.round((targetSampleRate * (options.chunkMs ?? 100)) / 1000) },
+        });
+        // Keep the graph pulled without playing the mic back to the speakers.
+        const silent = context.createGain();
+        silent.gain.value = 0;
+        source.connect(node);
+        node.connect(silent);
+        silent.connect(context.destination);
+        let muted = false;
+        let stopped = false;
+        node.port.onmessage = (event: MessageEvent<{ pcm: ArrayBuffer; rms: number }>) => {
+            if (muted || stopped) return;
+            options.onChunk({ pcm: new Int16Array(event.data.pcm), rms: event.data.rms });
+        };
+        return {
+            stream,
+            sampleRate: targetSampleRate,
+            setMuted(value) {
+                muted = value;
+                stream.getAudioTracks().forEach((t) => (t.enabled = !value));
+            },
+            isLive() {
+                return !stopped && stream.getAudioTracks().some((t) => t.readyState === 'live');
+            },
+            async stop() {
+                if (stopped) return;
+                stopped = true;
+                node.port.onmessage = null;
+                try { source.disconnect(); node.disconnect(); } catch { /* already disconnected */ }
+                stream.getTracks().forEach((t) => t.stop());
+                if (context.state !== 'closed') await context.close();
+            },
+        };
+    } catch (error) {
+        stream.getTracks().forEach((track) => track.stop());
+        if (context.state !== 'closed') await context.close().catch(() => {});
+        throw micErrorFrom(error);
+    }
 }

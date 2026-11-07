@@ -88,6 +88,17 @@ export const deleteAccountRequestSchema = z.object({
     confirm: z.literal('DELETE'),
 });
 
+export const pronunciationRequestSchema = sttRequestSchema.extend({
+    audio: z.string().min(100).max(650_000).regex(/^[A-Za-z0-9+/]+={0,2}$/),
+    referenceText: shortText(500),
+});
+export const pronunciationResultSchema = z.object({
+    provider: z.literal('azure'), transcript: z.string(), accuracy: z.number().min(0).max(100),
+    fluency: z.number().min(0).max(100), completeness: z.number().min(0).max(100), score: z.number().min(0).max(100),
+    words: z.array(z.object({ word: z.string(), accuracy: z.number().min(0).max(100).nullable(), errorType: z.string(), phonemes: z.array(z.object({ phoneme: z.string(), accuracy: z.number().min(0).max(100) })).max(100) })).max(300),
+});
+export type PronunciationResult = z.infer<typeof pronunciationResultSchema>;
+
 // ---------------------------------------------------------------- AI results
 
 export const correctionSchema = z.object({
@@ -126,7 +137,7 @@ export type AssistResult =
     | { task: 'grammar_check'; result: Correction };
 
 export const writingFeedbackSchema = z.object({
-    correctedText: z.string(),
+    correctedText: z.string().min(1),
     overallFeedback: z.string(),
     coherence: z.object({
         rating: z.number().int().min(1).max(5),
@@ -177,6 +188,7 @@ export const sttResultSchema = z.object({ transcript: z.string() });
 // ---------------------------------------------------------------- API payloads
 
 export type FeatureFlags = {
+    pronunciationAssessment?: boolean;
     aiText: boolean;
     aiVoice: boolean;
     textModel: string | null;

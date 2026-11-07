@@ -8,8 +8,13 @@ SUPABASE_PUBLISHABLE_KEY=
 # Secret key (sb_secret_...) or legacy service_role key — bypasses RLS. Server only. Never commit.
 SUPABASE_SECRET_KEY=
 
-# Google AI Studio API key. Use a project WITHOUT billing to stay on the free tier.
+# Google AI Studio API key. Choose billing/data terms for your audience before enabling.
 GEMINI_API_KEY=
+
+# Optional acoustic phoneme scoring (Azure Speech resource; may incur charges).
+AZURE_PRONUNCIATION_ENABLED=false
+AZURE_SPEECH_ENDPOINT=https://<resource-name>.cognitiveservices.azure.com
+AZURE_SPEECH_KEY=
 
 # Turn on cost-incurring features locally (defaults in wrangler.toml are "false").
 AI_TEXT_ENABLED=true

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/form';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { Badge, EmptyState, ErrorState, Skeleton } from '@/components/ui/feedback';
 import { SpeakButton } from '@/components/common/SpeakButton';
+import { SaveOfflineButton } from '@/components/common/SaveOfflineButton';
 import { useStudyTimer } from '@/hooks/useStudyTimer';
 import { useLearnerContext } from '@/hooks/useUserData';
 import { errorMessage } from '@/lib/api';
@@ -51,6 +52,7 @@ export default function ReadingLessonPage() {
                 </div>
                 <h1 className="mt-2 text-2xl font-semibold tracking-tight">{lesson.title}</h1>
                 <p className="text-muted">{lesson.title_vi}</p>
+                <div className="mt-3"><SaveOfflineButton item={{ id: `reading-${lesson.id}`, kind: 'reading', title: lesson.title, passage: lesson.content.passage, summary: lesson.content.summaryVi }} /></div>
             </div>
 
             <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">

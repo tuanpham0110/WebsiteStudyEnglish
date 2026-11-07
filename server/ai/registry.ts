@@ -1,4 +1,5 @@
 import type { AppConfig } from '../env';
+import { AzurePronunciationProvider } from './azure-pronunciation';
 import { GeminiRealtimeVoiceProvider } from './gemini/live';
 import { GeminiSpeechToTextProvider } from './gemini/stt';
 import { GeminiTextChatProvider } from './gemini/text';
@@ -7,8 +8,10 @@ import type { Providers } from './types';
 /** Build providers from config. Anything not configured or not enabled is null. */
 export function createProviders(config: AppConfig): Providers {
     const gemini = config.gemini;
-    if (!gemini) return { text: null, live: null, stt: null };
+    const pronunciation = config.azureSpeech ? new AzurePronunciationProvider(config.azureSpeech) : null;
+    if (!gemini) return { text: null, live: null, stt: null, pronunciation };
     return {
+        pronunciation,
         text: config.aiTextEnabled
             ? new GeminiTextChatProvider({ apiKey: gemini.apiKey, model: gemini.textModel, thinkingLevel: gemini.thinkingLevel })
             : null,

@@ -78,7 +78,7 @@ Các điểm then chốt:
 | Cấp | Điều kiện | Cách hoạt động |
 |---|---|---|
 | 1. Realtime voice | `AI_VOICE_ENABLED` + trình duyệt có AudioWorklet/WebSocket + HTTPS + micro | Gemini Live, voice-to-voice, có ngắt lời |
-| 2. Dự phòng | `AI_TEXT_ENABLED` + Web Speech API (Chrome, Edge, Safari) | Trình duyệt nhận dạng → `POST /turn` (AI văn bản) → trình duyệt đọc. Giao diện ghi rõ **không phải realtime** |
+| 2. Dự phòng | `AI_TEXT_ENABLED` + Web Speech hoặc micro/AudioWorklet | Trình duyệt nhận dạng; nếu thiếu Web Speech thì ghi từng lượt tối đa 15 giây → `/api/stt` → `/turn`. Đọc to nếu có TTS. Với nhận dạng server, mỗi lượt bắt đầu bằng nút Nói. |
 | 3. Văn bản | `AI_TEXT_ENABLED` | Gõ câu trả lời; AI trả lời bằng văn bản (đọc to nếu có speech synthesis) |
 
 ## Luồng AI Chat
@@ -86,7 +86,7 @@ Các điểm then chốt:
 1. `POST /api/chat/stream` (SSE). Server kiểm tra quota (`consume_ai_quota`), tải 20 tin nhắn gần nhất **từ DB** (không tin lịch sử từ client), lưu tin nhắn người học.
 2. Song song: stream câu trả lời và gọi riêng bộ sửa lỗi (JSON có schema).
 3. Sự kiện SSE: `meta` → `delta`… → `correction` → `done` (hoặc `error`). Câu trả lời được lưu khi stream kết thúc.
-4. Khi nhà cung cấp trả 429, người học thấy "đã hết hạn mức miễn phí tạm thời — không tự chuyển sang trả phí", lượt bị đánh dấu lỗi và **không trừ** vào quota ngày.
+4. Khi nhà cung cấp trả 429, người học thấy thông báo dịch vụ đang giới hạn số yêu cầu, lượt bị đánh dấu lỗi và **không trừ** vào quota ngày của người học. Request lỗi vẫn được tính vào trần hệ thống và giới hạn theo phút.
 
 ## Lớp AI (provider abstraction)
 
@@ -114,7 +114,7 @@ Ngày quota tính theo UTC (7:00 sáng giờ Việt Nam). Hạn mức miễn ph�
 - **Admin:** `profiles.role = 'admin'` chỉ đặt được bằng SQL; `admin_overview()` kiểm tra quyền trong DB, chỉ trả số liệu tổng hợp.
 - **API:** validate mọi body bằng Zod, giới hạn kích thước, CORS allowlist (kèm wildcard cho preview), lỗi trả về thông điệp an toàn, log đã che khóa/token.
 - **Trình duyệt:** CSP chặt (`script-src 'self'`), `X-Frame-Options: DENY`, `Permissions-Policy: microphone=(self)`.
-- **Âm thanh:** không lưu file âm thanh; audio AI chỉ giữ trong bộ nhớ để phát lại; micro tắt khi kết thúc phiên hoặc rời trang.
+- **Âm thanh:** không lưu file âm thanh trên máy chủ; audio AI chỉ giữ trong bộ nhớ để phát lại; micro tắt khi kết thúc phiên hoặc rời trang. Nhật ký phát âm lưu WAV trong IndexedDB khi người học chủ động ghi, theo user id (100 bản/32 MB); có tải xuống và xóa.
 
 ## Mô hình dữ liệu
 
@@ -122,7 +122,7 @@ Ngày quota tính theo UTC (7:00 sáng giờ Việt Nam). Hạn mức miễn ph�
 |---|---|---|
 | `profiles`, `user_settings`, `learning_preferences` | hồ sơ, cài đặt, mục tiêu | trigger khi đăng ký; người dùng (cột được phép) |
 | `learning_plans` | kế hoạch theo quy tắc | người dùng |
-| `lessons`, `exercises`, `vocabulary` (catalog) | nội dung học | migration seed |
+| `lessons`, `exercises`, `vocabulary` (catalog) | nội dung học | seed khởi tạo; admin biên tập trực tiếp qua RLS |
 | `vocabulary` (owner_id = user), `user_vocabulary`, `vocabulary_reviews` | sổ từ cá nhân, trạng thái SRS | người dùng |
 | `exercise_attempts`, `learning_progress` | kết quả, thời gian học | người dùng (thời điểm do server quyết định) |
 | `conversations`, `messages` | AI chat & nhập vai | API (với JWT người dùng) |
@@ -134,3 +134,15 @@ Bảng điều khiển dùng RPC `get_dashboard_stats(tz)` (security invoker) t�
 ## Gợi ý học tập
 
 Kế hoạch học và gợi ý trên Dashboard được tạo bằng **quy tắc cố định** (`src/lib/recommendations.ts`) từ dữ liệu thật: từ đến hạn ôn, kỹ năng có độ chính xác thấp, số ngày chưa luyện nói, mục tiêu phút/ngày. Giao diện ghi rõ đây là recommendation logic, không phải mô hình AI cá nhân hóa.
+
+## Bổ sung sau rà soát 08/11/2026
+
+- CMS ở trang Quản trị: biểu mẫu cho 4 loại bài, câu hỏi, từ catalog, bản nháp/xuất bản. Quyền ghi nằm trong RLS; câu hỏi của bản nháp cũng bị ẩn. Seed chỉ thêm dữ liệu thiếu, không ghi đè/xóa nội dung giáo viên sửa.
+- `LIMIT_GLOBAL_AI_PER_MINUTE` giới hạn tổng số request theo provider/model bằng advisory lock trong DB, bao gồm request lỗi; chat có sửa lỗi dự trữ 2 request. Đây là trần cấu hình của ứng dụng, không thay thế hạn mức RPM/TPM/RPD của nhà cung cấp.
+- `/api/pronunciation/assess`: Azure Speech tùy chọn, tắt mặc định, khóa chỉ ở server. Kiểm tra WAV PCM 16 kHz mono 0,4–15 giây trước khi trừ quota. Điểm âm học/âm vị tách khỏi độ khớp transcript. Chưa bật prosody/stress.
+- Bài nghe ưu tiên `script[].audioUrl` (audio theo câu), TTS cho câu chưa có audio; lỗi file không tự đổi nguồn âm thanh. URL HTTPS hoặc đường dẫn cùng website.
+- Chấm viết xác minh trích dẫn thực sự nằm trong bài gốc và bản sửa; dùng rubric mạch lạc cố định. Đây là kiểm tra tính bám sát văn bản, không chứng minh mọi sửa ngữ pháp đều đúng. Không dùng hạ temperature cho Gemini 3 vì hướng dẫn nhà cung cấp khuyến nghị giữ mặc định.
+- Tùy chọn loa ngoài ngừng gửi micro khi AI phát âm thanh và thêm khoảng chờ 350 ms. Chế độ mặc định vẫn cho ngắt lời; luôn yêu cầu echo cancellation/noise suppression khi mở micro. Cần thử trên thiết bị thật.
+- `/api/health` truy vấn DB với timeout 5 giây và trả 503 khi không truy cập được, để giám sát phát hiện project pause/sự cố. Không tự khôi phục dự án Supabase.
+- PWA chỉ cache shell công khai `/offline.html` cùng tài nguyên của nó. IndexedDB riêng chứa bài đọc/thẻ catalog được tải chủ động (25 mục). Không cache API, JWT, chat hay dữ liệu người học; tự luyện thẻ offline không đồng bộ SRS.
+- SRS vẫn là SM-2 đơn giản; nhãn `mastered` không còn loại từ khỏi lịch ôn. FSRS cần một dự án chuyển đổi và đánh giá riêng.

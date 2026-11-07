@@ -59,6 +59,7 @@ export function createSupabaseRepo(config: SupabaseConfig, accessToken: string):
                     p_user_daily_limit: i.dailyLimit,
                     p_user_minute_limit: i.minuteLimit,
                     p_global_daily_limit: i.globalLimit,
+                    p_global_minute_limit: i.globalMinuteLimit,
                     p_provider: i.provider,
                     p_model: i.model,
                 }),

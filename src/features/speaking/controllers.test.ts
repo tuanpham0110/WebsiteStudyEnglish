@@ -24,7 +24,7 @@ const grant: SpeakingStartResponse = {
     outputSampleRate: 24000,
 };
 
-function setup(overrides: { startMic?: () => Promise<never>; apiStart?: SpeakingApi['start']; connect?: () => Promise<void> } = {}) {
+function setup(overrides: { startMic?: () => Promise<never>; apiStart?: SpeakingApi['start']; connect?: () => Promise<void>; speakerMode?: boolean } = {}) {
     let now = 1_000_000;
     let onChunk: ((c: MicChunk) => void) | null = null;
     let events: LiveEvents = {};
@@ -34,6 +34,7 @@ function setup(overrides: { startMic?: () => Promise<never>; apiStart?: Speaking
         interrupt: vi.fn(),
         close: vi.fn(async () => {}),
         resume: vi.fn(async () => {}),
+        setSampleRate: vi.fn(),
         playClip: vi.fn(),
         onDrained: vi.fn(() => () => true),
         playing: false,
@@ -51,7 +52,7 @@ function setup(overrides: { startMic?: () => Promise<never>; apiStart?: Speaking
         end: vi.fn(async () => ({ durationSeconds: 12 })),
     };
     const controller = new RealtimeSpeakingController(
-        { level: 'B1', topic: 'Travel', voice: 'Kore' },
+        { level: 'B1', topic: 'Travel', voice: 'Kore', speakerMode: overrides.speakerMode },
         {
             api,
             now: () => now,
@@ -87,6 +88,16 @@ beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
 describe('RealtimeSpeakingController', () => {
+    it('suppresses speaker echo and briefly waits for the acoustic tail before listening again', async () => {
+        const t = setup({ speakerMode: true }); await t.controller.start();
+        t.events().onAudio?.(int16ToBase64(new Int16Array([1,2,3]))); t.chunk(0.2);
+        expect(t.client.sendAudio).not.toHaveBeenCalled();
+        t.events().onTurnComplete?.(); t.chunk(0.2);
+        expect(t.client.sendAudio).not.toHaveBeenCalled();
+        t.advance(400); t.chunk(0.2);
+        expect(t.client.sendAudio).toHaveBeenCalledTimes(1);
+        await t.controller.end();
+    });
     it('stops before contacting the server when microphone permission is denied', async () => {
         const t = setup({
             startMic: async () => {
@@ -311,7 +322,8 @@ describe('speaking tier selection', () => {
     it('prefers realtime, then browser speech, then text', () => {
         expect(chooseTier(full, { aiVoice: true, aiText: true })).toBe('realtime');
         expect(chooseTier(full, { aiVoice: false, aiText: true })).toBe('fallback');
-        expect(chooseTier({ ...full, speechRecognition: false }, { aiVoice: false, aiText: true })).toBe('text');
+        expect(chooseTier({ ...full, speechRecognition: false }, { aiVoice: false, aiText: true })).toBe('fallback');
+        expect(chooseTier({ ...full, speechRecognition: false, realtimeAudio: false }, { aiVoice: false, aiText: true })).toBe('text');
         expect(chooseTier({ ...full, secureContext: false }, { aiVoice: true, aiText: true })).toBe('text');
     });
 });

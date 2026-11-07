@@ -52,6 +52,7 @@ Không có Supabase vẫn mở được trang giới thiệu; các trang cần �
 
 ## Tài liệu
 
+- [Đối chiếu nhận xét, các sửa đổi và cấu hình cần bổ sung](docs/REVIEW_AND_FIXES.md)
 - [Kiến trúc & luồng dữ liệu](docs/ARCHITECTURE.md)
 - [Dịch vụ, chi phí, giới hạn miễn phí đã xác minh](docs/SERVICES_AND_COSTS.md)
 - [Hướng dẫn deploy từng bước](docs/DEPLOYMENT.md)

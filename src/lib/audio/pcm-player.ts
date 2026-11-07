@@ -6,7 +6,7 @@ import { int16ToFloat32 } from './pcm';
  */
 export class PcmPlayer {
     private readonly context: AudioContext;
-    private readonly sampleRate: number;
+    private sampleRate: number;
     private nextTime = 0;
     private sources = new Set<AudioBufferSourceNode>();
     private drainListeners = new Set<() => void>();
@@ -19,6 +19,11 @@ export class PcmPlayer {
 
     async resume() {
         if (this.context.state === 'suspended') await this.context.resume();
+    }
+
+    setSampleRate(sampleRate: number) {
+        // Buffer rate can change without replacing the already unlocked context.
+        this.sampleRate = sampleRate;
     }
 
     get playing() {

@@ -6,6 +6,9 @@ export type Env = {
     SUPABASE_PUBLISHABLE_KEY?: string;
     SUPABASE_SECRET_KEY?: string;
     GEMINI_API_KEY?: string;
+    AZURE_SPEECH_KEY?: string;
+    AZURE_SPEECH_ENDPOINT?: string;
+    AZURE_PRONUNCIATION_ENABLED?: string;
 
     ALLOWED_ORIGINS?: string;
     AI_TEXT_ENABLED?: string;
@@ -22,6 +25,7 @@ export type Env = {
     LIMIT_VOICE_SECONDS_PER_DAY?: string;
     LIMIT_VOICE_SESSION_SECONDS?: string;
     LIMIT_GLOBAL_AI_PER_DAY?: string;
+    LIMIT_GLOBAL_AI_PER_MINUTE?: string;
     LIMIT_GLOBAL_VOICE_SECONDS_PER_DAY?: string;
     LIMIT_VOICE_CONCURRENT_GLOBAL?: string;
 };
@@ -34,11 +38,13 @@ export type Limits = {
     voiceSecondsPerDay: number;
     voiceSessionSeconds: number;
     globalAiPerDay: number;
+    globalAiPerMinute: number;
     globalVoiceSecondsPerDay: number;
     voiceConcurrentGlobal: number;
 };
 
 export type AppConfig = {
+    azureSpeech: { apiKey: string; endpoint: string } | null;
     supabase: { url: string; publishableKey: string; secretKey: string } | null;
     gemini: {
         apiKey: string;
@@ -88,6 +94,9 @@ export function loadConfig(env: Env): AppConfig {
         : null;
 
     return {
+        azureSpeech: flag(env.AZURE_PRONUNCIATION_ENABLED) && env.AZURE_SPEECH_KEY &&
+            /^https:\/\/[a-z0-9-]+\.cognitiveservices\.azure\.com\/?$/.test(env.AZURE_SPEECH_ENDPOINT ?? '')
+            ? { apiKey: env.AZURE_SPEECH_KEY, endpoint: env.AZURE_SPEECH_ENDPOINT!.replace(/\/$/, '') } : null,
         supabase,
         gemini,
         // A feature is only on when explicitly enabled AND its provider is configured.
@@ -106,6 +115,7 @@ export function loadConfig(env: Env): AppConfig {
             // Kept under the provider's ~10 minute connection lifetime so no resumption is needed.
             voiceSessionSeconds: int(env.LIMIT_VOICE_SESSION_SECONDS, 300, 60, 540),
             globalAiPerDay: int(env.LIMIT_GLOBAL_AI_PER_DAY, 900, 0, 1_000_000),
+            globalAiPerMinute: int(env.LIMIT_GLOBAL_AI_PER_MINUTE, 10, 1, 100_000),
             globalVoiceSecondsPerDay: int(env.LIMIT_GLOBAL_VOICE_SECONDS_PER_DAY, 7200, 0, 10_000_000),
             voiceConcurrentGlobal: int(env.LIMIT_VOICE_CONCURRENT_GLOBAL, 3, 0, 1000),
         },

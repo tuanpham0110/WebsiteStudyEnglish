@@ -12,6 +12,7 @@ import {
     speakingStartRequestSchema,
     speakingTurnRequestSchema,
     sttRequestSchema,
+    pronunciationRequestSchema,
     writingEvaluateRequestSchema,
     type AppConfigResponse,
     type SpeakingStartResponse,
@@ -23,12 +24,14 @@ import type { QuotaKind, QuotaResult, Repo, VoiceStartResult } from './data/repo
 import type { AppConfig, Env } from './env';
 import { ApiError, logError, ProviderError, toApiError } from './errors';
 import { EnglishEvaluationService } from './services/evaluation';
+import { decodePronunciationAudio } from './ai/azure-pronunciation';
 
 export type AppDeps = {
     config: AppConfig;
     verifyToken: ((token: string) => Promise<AuthUser | null>) | null;
     repoFor: ((token: string) => Repo) | null;
     providers: Providers;
+    checkDatabase?: () => Promise<boolean>;
 };
 
 type Vars = { deps: AppDeps; user: AuthUser; repo: Repo };
@@ -71,13 +74,14 @@ export function createApp(resolveDeps: (env: Env) => AppDeps) {
     app.notFound((c) => c.json(new ApiError('NOT_FOUND', 'Không tìm thấy endpoint.').toBody(), 404));
 
     // ------------------------------------------------------------ public
-    app.get('/health', (c) => {
-        const { config } = c.get('deps');
+    app.get('/health', async (c) => {
+        const { config, checkDatabase } = c.get('deps');
+        const database = checkDatabase ? await checkDatabase().catch(() => false) : config.supabase !== null;
         return c.json({
-            ok: true,
-            database: config.supabase !== null,
+            ok: database,
+            database,
             features: { aiText: config.aiTextEnabled, aiVoice: config.aiVoiceEnabled },
-        });
+        }, database ? 200 : 503);
     });
 
     // ------------------------------------------------------------ authenticated
@@ -100,6 +104,7 @@ export function createApp(resolveDeps: (env: Env) => AppDeps) {
         const usage = await c.get('repo').usageToday();
         const body: AppConfigResponse = {
             features: {
+                pronunciationAssessment: Boolean(c.get('deps').providers.pronunciation),
                 aiText: config.aiTextEnabled,
                 aiVoice: config.aiVoiceEnabled,
                 textModel: config.aiTextEnabled ? config.gemini?.textModel ?? null : null,
@@ -433,6 +438,14 @@ export function createApp(resolveDeps: (env: Env) => AppDeps) {
         return c.json({ transcript });
     });
 
+    authed.post('/pronunciation/assess', async (c) => {
+        const provider = c.get('deps').providers.pronunciation;
+        if (!provider) throw new ApiError('FEATURE_DISABLED', 'Chấm phát âm âm học chưa được cấu hình.');
+        const body = await parseJson(c, pronunciationRequestSchema, 660_000);
+        const audio = decodePronunciationAudio(body.audio);
+        return c.json(await withQuota(c, 'stt', 1, provider, () => provider.assess(audio, body.referenceText)));
+    });
+
     // ---- account deletion (requires typing DELETE in the UI)
     authed.delete('/account', async (c) => {
         await parseJson(c, deleteAccountRequestSchema, 200);
@@ -495,6 +508,7 @@ async function consumeQuota(c: Ctx, kind: QuotaKind, requests: number, provider:
         dailyLimit,
         minuteLimit: limits.aiPerMinute,
         globalLimit: limits.globalAiPerDay,
+        globalMinuteLimit: limits.globalAiPerMinute,
         provider: provider.name,
         model: provider.model,
     });
@@ -502,7 +516,7 @@ async function consumeQuota(c: Ctx, kind: QuotaKind, requests: number, provider:
     return result;
 }
 
-async function withQuota<T>(c: Ctx, kind: QuotaKind, requests: number, provider: TextChatProvider, fn: () => Promise<T>): Promise<T> {
+async function withQuota<T>(c: Ctx, kind: QuotaKind, requests: number, provider: { name: string; model: string }, fn: () => Promise<T>): Promise<T> {
     const quota = await consumeQuota(c, kind, requests, provider);
     try {
         return await fn();
@@ -516,6 +530,8 @@ async function withQuota<T>(c: Ctx, kind: QuotaKind, requests: number, provider:
 
 function quotaError(result: QuotaResult) {
     switch (result.reason) {
+        case 'global_rate_limited':
+            return new ApiError('RATE_LIMITED', 'AI đang bận do có nhiều người sử dụng. Hãy đợi khoảng một phút rồi thử lại.');
         case 'rate_limited':
             return new ApiError('RATE_LIMITED', 'Bạn gửi yêu cầu quá nhanh. Hãy đợi khoảng một phút rồi thử lại.');
         case 'global_daily':

@@ -53,12 +53,12 @@ export function toApiError(error: unknown): ApiError {
             case 'quota':
                 return new ApiError(
                     'PROVIDER_QUOTA',
-                    'Nhà cung cấp AI đã hết hạn mức miễn phí tạm thời. Hệ thống không tự chuyển sang gói trả phí — vui lòng thử lại sau.',
+                    'Nhà cung cấp AI đang giới hạn số yêu cầu. Vui lòng thử lại sau ít phút; bạn vẫn có thể học các bài không dùng AI.',
                 );
             case 'blocked':
                 return new ApiError('PROVIDER_ERROR', 'Nội dung bị bộ lọc an toàn của nhà cung cấp AI chặn. Hãy thử diễn đạt khác.');
             case 'invalid_output':
-                return new ApiError('PROVIDER_ERROR', 'AI trả về dữ liệu không đúng định dạng. Vui lòng thử lại.');
+                return new ApiError('PROVIDER_ERROR', 'Dịch vụ AI trả về kết quả chưa đủ tin cậy hoặc không đúng định dạng. Vui lòng thử lại.');
             case 'auth':
                 return new ApiError('PROVIDER_ERROR', 'Cấu hình nhà cung cấp AI không hợp lệ. Quản trị viên cần kiểm tra API key.');
             default:

@@ -1,6 +1,6 @@
 import { api } from '@/lib/api';
-import { bytesToBase64, concatInt16, encodeWav } from '@/lib/audio/pcm';
-import { startMicCapture, type MicCapture } from '@/lib/audio/mic-capture';
+import { bytesToBase64, encodeWav } from '@/lib/audio/pcm';
+import { recordPcm } from '@/lib/audio/record-pcm';
 import { getSpeechRecognition, type BrowserSpeechRecognition } from './support';
 
 // SpeechToTextProvider implementations used outside realtime sessions.
@@ -94,32 +94,25 @@ export function serverSTT(maxSeconds = 15): SpeechToTextProvider & { lastRecordi
         name: 'server',
         lastRecording: () => last,
         listen(callbacks = {}) {
-            const chunks: Int16Array[] = [];
-            let mic: MicCapture | null = null;
-            let finish: (() => void) | null = null;
+            last = null;
             let cancelled = false;
-            const recorded = new Promise<void>((resolve) => (finish = resolve));
+            const abort = new AbortController();
+            const recorded = recordPcm(callbacks.onListening,maxSeconds);
             const result = (async () => {
-                mic = await startMicCapture({ onChunk: ({ pcm }) => chunks.push(pcm) });
-                callbacks.onListening?.();
-                const timer = setTimeout(() => finish?.(), maxSeconds * 1000);
-                await recorded;
-                clearTimeout(timer);
-                await mic.stop();
-                if (cancelled) return '';
-                const pcm = concatInt16(chunks);
+                const pcm = await recorded.result;
+                if (cancelled || !pcm) return '';
                 last = pcm;
                 if (pcm.length < 16000 * 0.4) return '';
                 const audio = bytesToBase64(encodeWav(pcm, 16000));
-                const { transcript } = await api<{ transcript: string }>('/api/stt', { body: { audio, mimeType: 'audio/wav' } });
+                const { transcript } = await api<{ transcript: string }>('/api/stt', { body: { audio, mimeType: 'audio/wav' }, signal: abort.signal });
                 return transcript;
             })();
             return {
                 result,
-                stop: () => finish?.(),
+                stop: recorded.stop,
                 abort: () => {
                     cancelled = true;
-                    finish?.();
+                    recorded.abort(); abort.abort();
                 },
             };
         },
