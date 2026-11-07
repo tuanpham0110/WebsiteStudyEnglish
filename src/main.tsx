@@ -8,25 +8,25 @@ import { ThemeProvider, useTheme } from './providers/ThemeProvider';
 import './index.css';
 
 const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: { retry: 1, refetchOnWindowFocus: false },
-  },
+    defaultOptions: {
+        queries: { retry: 1, refetchOnWindowFocus: false },
+    },
 });
 
 function ThemedToaster() {
-  const { resolved } = useTheme();
-  return <Toaster theme={resolved} position="top-center" richColors closeButton />;
+    const { resolved } = useTheme();
+    return <Toaster theme={resolved} position="top-center" richColors closeButton />;
 }
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
-          <App />
-          <ThemedToaster />
-        </AuthProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
-  </StrictMode>,
+    <StrictMode>
+        <QueryClientProvider client={queryClient}>
+            <ThemeProvider>
+                <AuthProvider>
+                    <App />
+                    <ThemedToaster />
+                </AuthProvider>
+            </ThemeProvider>
+        </QueryClientProvider>
+    </StrictMode>,
 );
